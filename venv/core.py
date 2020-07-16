@@ -39,7 +39,7 @@ def Idle():
             predID, conf = FACE_RECOGNIZER.predict(grayFrame[y:y + h, x:x + w])
 
             #Display face information on the frame.
-            color = (0, 0, 255) #BGR (NOT RGB)
+            color = (0, 0, 255) if (conf > 100) else (0, 255, 0) #BGR (NOT RGB)
             stroke = 1
             font = cv2.FONT_HERSHEY_PLAIN
 
