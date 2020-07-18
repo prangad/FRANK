@@ -4,14 +4,13 @@ import cv2
 import pickle
 import time
 import os
+import config as cfg
 
 #Face cascade is used to recognize faces in the scene.
 #TODO : Use multiple face cascades?
 FACE_CASCADE = cv2.CascadeClassifier("Lib/site-packages/cv2/data/haarcascade_frontalface_alt2.xml")
 #Face recognizer is used to identify faces in the scene.
 FACE_RECOGNIZER = cv2.face.LBPHFaceRecognizer_create()
-
-NAMES = {}
 
 curTime = lambda: int(round(time.time() * 1000))
 
@@ -37,16 +36,17 @@ def Idle():
         for (x, y, w, h) in faces:
             #Identify faces in frame.
             predID, conf = FACE_RECOGNIZER.predict(grayFrame[y:y + h, x:x + w])
+            confident = (conf < cfg.MAXIMUM_CONFIDENCE)
 
             #Display face information on the frame.
-            color = (0, 0, 255) if (conf > 100) else (0, 255, 0) #BGR (NOT RGB)
+            color = cfg.KNOWN_ROI_COLOR if confident else cfg.UNKNOWN_ROI_COLOR #BGR
             stroke = 1
             font = cv2.FONT_HERSHEY_PLAIN
 
             end_coord_x = x + w
             end_coord_y = y + h
             cv2.rectangle(frame, (x,y), (end_coord_x,end_coord_y), color, stroke)
-            cv2.putText(frame, "{0} ({1:.2f})".format(NAMES[predID] if (conf < 100) else "Unknown", conf), (x, y), font, 1, (100,100,255), stroke, cv2.LINE_AA)
+            cv2.putText(frame, "{0} ({1:.2f})".format(NAMES[predID] if confident else "Unknown", conf), (x, y), font, 1, cfg.NAME_LABEL_COLOR, stroke, cv2.LINE_AA)
         #Display the frame.
         cv2.imshow("Webcam Debug Information", frame)
 
@@ -71,25 +71,25 @@ def CaptureNewTrainingSet(identifier):
         print("Updating existing data set for {0}.".format(identifier))
 
         #Training image ripper loop.
-    while (True and imgIndex < 50):
+    while (True and imgIndex < cfg.TRAINING_IMG_CAPTURE_COUNT):
         # Capture a frame.
         retval, frame = WEBCAM_STREAM.read()
         # Recognize faces in frame.
         grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = FACE_CASCADE.detectMultiScale(grayFrame)
         for (x, y, w, h) in faces:
-            color = (0, 0, 255)  # BGR (NOT RGB)
+            color = cfg.PICTURE_AVAILABLE_ROI_COLOR  # BGR
             stroke = 1
             end_coord_x = x + w
             end_coord_y = y + h
 
-            if ((imgTime + 100) <= curTime()):
+            if ((imgTime + cfg.TRAINING_IMG_CAPTURE_DELAY_MS) <= curTime()):
                 training_ROI = grayFrame[y:y + h, x:x + w]
                 imgLocation = "res\\training_data\\{0}\\{1}.png".format(identifier, imgIndex)
                 cv2.imwrite(imgLocation, training_ROI)
                 imgIndex += 1
 
-                color = (0, 255, 0)  # BGR (NOT RGB)
+                color = cfg.PICTURE_TAKEN_ROI_COLOR  # BGR (NOT RGB)
                 imgTime = curTime()
 
             cv2.rectangle(frame, (x, y), (end_coord_x, end_coord_y), color, stroke)

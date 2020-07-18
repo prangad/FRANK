@@ -1,6 +1,6 @@
 import core
 import training
 
-#core.CaptureNewTrainingSet("Death")
+core.CaptureNewTrainingSet("Death")
 #training.train()
-core.Idle()
+#core.Idle()
